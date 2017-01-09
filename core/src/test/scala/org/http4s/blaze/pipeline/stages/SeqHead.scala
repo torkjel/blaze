@@ -4,7 +4,7 @@ import org.http4s.blaze.pipeline.HeadStage
 import scala.concurrent.Future
 import org.http4s.blaze.pipeline.Command.EOF
 
-class SeqHead[O](private var data: Seq[O]) extends HeadStage[O] {
+class SeqHead[O](private var data: Seq[O]) extends HeadStage[O, O] {
 
   private var acc: Vector[O] = Vector.empty
 

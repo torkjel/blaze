@@ -13,21 +13,21 @@ import org.http4s.blaze.util.Execution._
 import scala.util.{Try, Failure, Success}
 
 /** Combined [[WriteSerializer]] and [[ReadSerializer]] */
-trait Serializer[I] extends WriteSerializer[I] with ReadSerializer[I]
+trait Serializer[I, O] extends WriteSerializer[I, O] with ReadSerializer[I, O]
 
 /** Serializes write requests, storing intermediates in a queue */
-trait WriteSerializer[I] extends TailStage[I] { self =>
+trait WriteSerializer[I, O] extends TailStage[I, O] { self =>
 
   def maxWriteQueue: Int = 0
 
   ////////////////////////////////////////////////////////////////////////
 
   private val _serializerWriteLock = new AnyRef
-  private var _serializerWriteQueue = new ArrayBuffer[I]
+  private var _serializerWriteQueue = new ArrayBuffer[O]
   private var _serializerWritePromise: Promise[Unit] = null
 
   ///  channel writing bits //////////////////////////////////////////////
-  override def channelWrite(data: I): Future[Unit] = _serializerWriteLock.synchronized {
+  override def channelWrite(data: O): Future[Unit] = _serializerWriteLock.synchronized {
     if (maxWriteQueue > 0 && _serializerWriteQueue.length > maxWriteQueue) {
       Future.failed(new Exception(s"$name Stage max write queue exceeded: $maxWriteQueue"))
     }
@@ -45,7 +45,7 @@ trait WriteSerializer[I] extends TailStage[I] { self =>
     }
   }
 
-  override def channelWrite(data: Seq[I]): Future[Unit] = _serializerWriteLock.synchronized {
+  override def channelWrite(data: Seq[O]): Future[Unit] = _serializerWriteLock.synchronized {
     if (maxWriteQueue > 0 && _serializerWriteQueue.length > maxWriteQueue) {
       Future.failed(new Exception(s"$name Stage max write queue exceeded: $maxWriteQueue"))
     }
@@ -77,7 +77,7 @@ trait WriteSerializer[I] extends TailStage[I] { self =>
         val f = {
           if (_serializerWriteQueue.length > 1) { // multiple messages, just give them the queue
             val a = _serializerWriteQueue
-            _serializerWriteQueue = new ArrayBuffer[I](a.size + 10)
+            _serializerWriteQueue = new ArrayBuffer[O](a.size + 10)
             super.channelWrite(a)
           } else {          // only a single element to write, don't send the while queue
             val h = _serializerWriteQueue.head
@@ -98,7 +98,7 @@ trait WriteSerializer[I] extends TailStage[I] { self =>
 }
 
 /** Serializes read requests */
-trait ReadSerializer[I] extends TailStage[I] {
+trait ReadSerializer[I, O] extends TailStage[I, O] {
   def maxReadQueue: Int = 0
 
   private val _serializerReadRef = new AtomicReference[Future[I]](null)

@@ -27,7 +27,7 @@ class SerializingStageSpec extends Specification {
     def name: String = "SlowIntHead"
   }
 
-  class Nameless extends TailStage[Int] {
+  class Nameless extends TailStage[Int, Int] {
     def name: String = "int getter"
   }
 
@@ -37,7 +37,7 @@ class SerializingStageSpec extends Specification {
     val head = new SlowIntHead
 
     // build our pipeline
-    LeafBuilder(tail).prepend(new SerializingStage[Int]).base(head)
+    LeafBuilder(tail).prepend(new SerializingStage[Int, Int]).base(head)
 
     val ints = (0 until 200).toList
 
@@ -46,7 +46,7 @@ class SerializingStageSpec extends Specification {
       val head = new SlowIntHead
 
       // build our pipeline
-      LeafBuilder(tail).prepend(new SerializingStage[Int]).base(head)
+      LeafBuilder(tail).prepend(new SerializingStage[Int, Int]).base(head)
 
 
       val results = ints map { i =>

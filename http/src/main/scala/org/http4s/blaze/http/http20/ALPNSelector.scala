@@ -20,7 +20,7 @@ import scala.util.{Failure, Success}
   */
 class ALPNSelector(engine: SSLEngine,
                  selector: Seq[String] => String,
-                  builder: String => LeafBuilder[ByteBuffer]) extends TailStage[ByteBuffer] {
+                  builder: String => LeafBuilder[ByteBuffer, ByteBuffer]) extends TailStage[ByteBuffer, ByteBuffer] {
 
   ALPN.put(engine, new ServerProvider)
 

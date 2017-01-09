@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 import java.net.ProtocolException
 
 
-class WSFrameAggregator extends MidStage[WebSocketFrame, WebSocketFrame] {
+class WSFrameAggregator extends MidStage[WebSocketFrame, WebSocketFrame, WebSocketFrame, WebSocketFrame] {
 
   def name: String = "WebSocket Frame Aggregator"
 

@@ -10,7 +10,7 @@ class PipelineSpec extends Specification {
 
   implicit def ec = Execution.trampoline
 
-  class IntHead extends HeadStage[Int] {
+  class IntHead extends HeadStage[Int, Int] {
     def name = "IntHead"
     @volatile
     var lastWrittenInt: Int = 0
@@ -21,7 +21,7 @@ class PipelineSpec extends Specification {
     def readRequest(size: Int): Future[Int] = Future(54)
   }
 
-  class IntToString extends MidStage[Int, String] {
+  class IntToString extends MidStage[Int, Int, String, String] {
     def name = "IntToString"
     def readRequest(size: Int): Future[String] = channelRead(1) map (_.toString)
     def writeRequest(data: String): Future[Unit] = {
@@ -30,13 +30,13 @@ class PipelineSpec extends Specification {
     }
   }
 
-  class Noop[T] extends MidStage[T, T] {
+  class Noop[T] extends MidStage[T, T, T, T] {
     def name: String = "NOOP"
     def readRequest(size: Int): Future[T] = channelRead(size)
     def writeRequest(data: T): Future[Unit] = channelWrite(data)
   }
 
-  class StringEnd extends TailStage[String] {
+  class StringEnd extends TailStage[String, String] {
     def name: String = "StringEnd"
 
     var lastString = ""

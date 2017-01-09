@@ -8,7 +8,7 @@ import scala.util.{Failure, Success}
 import org.http4s.blaze.pipeline.Command.EOF
 
 
-class EchoStage extends TailStage[ByteBuffer] {
+class EchoStage extends TailStage[ByteBuffer, ByteBuffer] {
 
   def name: String = "EchoStage"
 

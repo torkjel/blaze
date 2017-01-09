@@ -22,7 +22,7 @@ object Http2Selector {
     val H2       = "h2"
     val H2_14    = "h2-14"
     
-    def builder(s: String): LeafBuilder[ByteBuffer] = s match {
+    def builder(s: String): LeafBuilder[ByteBuffer,ByteBuffer] = s match {
     case H2 | H2_14 => LeafBuilder(http2Stage(service, maxBody, maxNonbodyLength, ec))
     case _          => LeafBuilder(new HttpServerStage(maxBody, maxNonbodyLength, ec)(service))
     }
@@ -37,9 +37,9 @@ object Http2Selector {
     new ALPNSelector(engine, selector, builder)
   }
 
-  private def http2Stage(service: HttpService, maxBody: Long, maxHeadersLength: Int, ec: ExecutionContext): TailStage[ByteBuffer] = {
+  private def http2Stage(service: HttpService, maxBody: Long, maxHeadersLength: Int, ec: ExecutionContext): TailStage[ByteBuffer,ByteBuffer] = {
 
-    def newNode(streamId: Int): LeafBuilder[Http2Msg] = {
+    def newNode(streamId: Int): LeafBuilder[Http2Msg, Http2Msg] = {
       LeafBuilder(new Http2ServerStage(streamId, maxBody, Duration.Inf, trampoline, service))
     }
 

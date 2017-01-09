@@ -8,8 +8,8 @@ import org.http4s.blaze.util.TickWheelExecutor
 import scala.concurrent.duration.Duration
 
 
-class CommandTimeoutStage[T](timeout: Duration, exec: TickWheelExecutor = scheduler)
-  extends TimeoutStageBase[T](timeout, exec) {
+class CommandTimeoutStage[I, O](timeout: Duration, exec: TickWheelExecutor = scheduler)
+  extends TimeoutStageBase[I, O](timeout, exec) {
   // Overrides to propagate commands.
   override def outboundCommand(cmd: OutboundCommand): Unit = cmd match {
     case TimeoutBegin => resetTimeout()

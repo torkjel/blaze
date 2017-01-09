@@ -14,7 +14,7 @@ import java.net.ProtocolException
 class FrameAggregatorSpec extends Specification {
 
   case class Sequencer(frames: Seq[WebSocketFrame]) {
-    val h = new TailStage[WebSocketFrame] {
+    val h = new TailStage[WebSocketFrame, WebSocketFrame] {
       def name: String = "gatherer"
     }
 

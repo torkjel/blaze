@@ -22,7 +22,7 @@ class Http2ServerStage(streamId: Int,
                        maxBody: Long,
                        timeout: Duration,
                        ec: ExecutionContext,
-                       service: HttpService) extends TailStage[Http2Msg] {
+                       service: HttpService) extends TailStage[Http2Msg, Http2Msg] {
 
   private implicit def _ec = ec   // for all the onComplete calls
 

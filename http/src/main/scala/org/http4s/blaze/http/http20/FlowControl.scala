@@ -10,7 +10,7 @@ import org.log4s.getLogger
 
 import scala.collection.mutable
 
-private final class FlowControl(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg],
+private final class FlowControl(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg,NodeMsg.Http2Msg],
                           ops: Http2StreamOps,
                           idManager: StreamIdManager,
                           http2Settings: Http2Settings,

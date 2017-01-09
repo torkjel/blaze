@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 
 abstract class TimeoutHelpers extends Specification {
   
-  def genDelayStage(timeout: Duration): TimeoutStageBase[ByteBuffer]
+  def genDelayStage(timeout: Duration): TimeoutStageBase[ByteBuffer, ByteBuffer]
 
   def newBuff = ByteBuffer.wrap("Foo".getBytes())
 
@@ -29,7 +29,7 @@ abstract class TimeoutHelpers extends Specification {
     checkBuff(r)
   }
 
-  def slow(duration: Duration) = new DelayHead[ByteBuffer](duration) { def next() = newBuff }
+  def slow(duration: Duration) = new DelayHead[ByteBuffer, ByteBuffer](duration) { def next() = newBuff }
 
   def makePipeline(delay: Duration, timeout: Duration): TestTail = {
     val leaf = new TestTail
@@ -43,7 +43,7 @@ abstract class TimeoutHelpers extends Specification {
     leaf
   }
 
-  class TestTail extends TailStage[ByteBuffer] {
+  class TestTail extends TailStage[ByteBuffer, ByteBuffer] {
     def name = "TestTail"
 
     private val disconnectCount = new AtomicInteger(0)

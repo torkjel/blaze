@@ -11,7 +11,7 @@ import org.log4s.getLogger
 
 import scala.annotation.tailrec
 
-private class Http2FrameHandler(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg],
+private class Http2FrameHandler(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg,NodeMsg.Http2Msg],
                                 http2Stage: Http2StreamOps,
                                 headerDecoder: HeaderDecoder,
                                 headerEncoder: HeaderEncoder,

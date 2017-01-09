@@ -18,7 +18,7 @@ import org.http4s.blaze.util.BufferTools._
 
 
 
-final class SSLStage(engine: SSLEngine, maxWrite: Int = 1024*1024) extends MidStage[ByteBuffer, ByteBuffer] {
+final class SSLStage(engine: SSLEngine, maxWrite: Int = 1024*1024) extends MidStage[ByteBuffer, ByteBuffer, ByteBuffer, ByteBuffer] {
   import SSLStage._
 
   def name: String = "SSLStage"

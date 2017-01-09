@@ -7,7 +7,7 @@ import java.nio.channels.ClosedChannelException
 import org.http4s.blaze.pipeline.Command._
 import org.http4s.blaze.pipeline.HeadStage
 
-trait ChannelHead extends HeadStage[ByteBuffer] {
+trait ChannelHead extends HeadStage[ByteBuffer, ByteBuffer] {
   import ChannelHead.brokePipeMessages
 
   /** Close the channel with an error

@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 
 
 class CommandTimeoutStageSpec extends TimeoutHelpers {
-  override def genDelayStage(timeout: Duration) = new CommandTimeoutStage[ByteBuffer](timeout)
+  override def genDelayStage(timeout: Duration) = new CommandTimeoutStage[ByteBuffer, ByteBuffer](timeout)
 
   "A CommandTimeoutStage" should {
     "not timeout with propper intervals" in {
@@ -36,7 +36,7 @@ class CommandTimeoutStageSpec extends TimeoutHelpers {
     "not timeout if the delay stage is removed" in {
       val pipe = makePipeline(2.seconds, 1.second)
       val f = pipe.channelRead()
-      pipe.findOutboundStage(classOf[TimeoutStageBase[ByteBuffer]]).get.removeStage
+      pipe.findOutboundStage(classOf[TimeoutStageBase[ByteBuffer, ByteBuffer]]).get.removeStage
       val r = checkFuture(f, 5.second)
       pipe.sendOutboundCommand(Command.Disconnect)
       r

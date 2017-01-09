@@ -9,7 +9,7 @@ import scala.util.Failure
 import scala.util.Success
 
 
-trait WSStage extends TailStage[WebSocketFrame] {
+trait WSStage extends TailStage[WebSocketFrame, WebSocketFrame] {
 
   def name: String = "WebSocket Stage"
 
@@ -43,7 +43,7 @@ trait WSStage extends TailStage[WebSocketFrame] {
 }
 
 object WSStage {
-  def bufferingSegment(stage: WSStage): LeafBuilder[WebSocketFrame] = {
-    TrunkBuilder(new SerializingStage[WebSocketFrame]).cap(stage)
+  def bufferingSegment(stage: WSStage): LeafBuilder[WebSocketFrame, WebSocketFrame] = {
+    TrunkBuilder(new SerializingStage[WebSocketFrame, WebSocketFrame]).cap(stage)
   }
 }

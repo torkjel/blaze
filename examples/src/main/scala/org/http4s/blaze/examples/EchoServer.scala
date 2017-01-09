@@ -34,7 +34,7 @@ class EchoServer {
     channel.join()
   }
 
-  private class EchoStage extends TailStage[ByteBuffer] {
+  private class EchoStage extends TailStage[ByteBuffer, ByteBuffer] {
     def name: String = "EchoStage"
 
     val msg = "echo: ".getBytes

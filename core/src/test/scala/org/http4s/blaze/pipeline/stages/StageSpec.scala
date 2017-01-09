@@ -10,8 +10,8 @@ import scala.concurrent.duration._
 
 class StageSpec extends Specification {
   
-  def intTail = new TailStage[Int] { def name = "Int Tail" }
-  def slow(duration: Duration) = new DelayHead[Int](duration) { def next() = 1 }
+  def intTail = new TailStage[Int, Int] { def name = "Int Tail" }
+  def slow(duration: Duration) = new DelayHead[Int, Int](duration) { def next() = 1 }
 
   def regPipeline() = {
     val leaf = intTail

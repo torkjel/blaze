@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-trait SlowHead[O] extends HeadStage[O] {
+trait SlowHead[O] extends HeadStage[O, O] {
 
   def get: O
 

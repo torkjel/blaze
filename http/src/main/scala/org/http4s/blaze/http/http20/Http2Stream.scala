@@ -26,7 +26,7 @@ private[http20] final class Http2Stream(val streamId: Int,
                                         codec: Http20FrameDecoder with Http20FrameEncoder,
                                         ops: Http2StreamOps,
                                         headerEncoder: HeaderEncoder)
-  extends HeadStage[Http2Msg]
+  extends HeadStage[Http2Msg,Http2Msg]
 {
   private sealed trait NodeState
   private case object Open extends NodeState

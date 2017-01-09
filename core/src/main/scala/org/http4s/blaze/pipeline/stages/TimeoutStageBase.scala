@@ -9,7 +9,7 @@ import org.http4s.blaze.util.{ Cancellable, TickWheelExecutor }
 
 import java.util.concurrent.atomic.AtomicReference
 
-abstract class TimeoutStageBase[T](timeout: Duration, exec: TickWheelExecutor) extends MidStage[T, T] { stage =>
+abstract class TimeoutStageBase[I, O](timeout: Duration, exec: TickWheelExecutor) extends MidStage[I, O, I, O] { stage =>
 
   import TimeoutStageBase.closedTag
 
@@ -43,11 +43,11 @@ abstract class TimeoutStageBase[T](timeout: Duration, exec: TickWheelExecutor) e
 
   /////////// Pass through implementations ////////////////////////////////
 
-  override def readRequest(size: Int): Future[T] = channelRead(size)
+  override def readRequest(size: Int): Future[I] = channelRead(size)
 
-  override def writeRequest(data: T): Future[Unit] = channelWrite(data)
+  override def writeRequest(data: O): Future[Unit] = channelWrite(data)
 
-  override def writeRequest(data: Seq[T]): Future[Unit] = channelWrite(data)
+  override def writeRequest(data: Seq[O]): Future[Unit] = channelWrite(data)
 
   /////////// Protected impl bits //////////////////////////////////////////
 

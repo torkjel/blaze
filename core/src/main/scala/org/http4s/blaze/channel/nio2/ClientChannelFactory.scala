@@ -19,8 +19,8 @@ import scala.util.control.NonFatal
   */
 class ClientChannelFactory(bufferSize: Int = 8*1024, group: AsynchronousChannelGroup = null) {
 
-  def connect(remoteAddress: SocketAddress, bufferSize: Int = bufferSize): Future[HeadStage[ByteBuffer]] = {
-    val p = Promise[HeadStage[ByteBuffer]]
+  def connect(remoteAddress: SocketAddress, bufferSize: Int = bufferSize): Future[HeadStage[ByteBuffer, ByteBuffer]] = {
+    val p = Promise[HeadStage[ByteBuffer, ByteBuffer]]
 
     try {
       val ch = AsynchronousSocketChannel.open(group)

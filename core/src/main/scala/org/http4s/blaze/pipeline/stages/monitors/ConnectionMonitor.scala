@@ -22,7 +22,7 @@ abstract class ConnectionMonitor {
   protected def bytesInbound(n: Long): Unit
   protected def bytesOutBound(n: Long): Unit
 
-  private class ServerStatusStage extends MidStage[ByteBuffer, ByteBuffer] {
+  private class ServerStatusStage[I, O] extends MidStage[ByteBuffer, ByteBuffer, ByteBuffer, ByteBuffer] {
     val name = "ServerStatusStage"
 
     private val cleaned = new AtomicBoolean(false)

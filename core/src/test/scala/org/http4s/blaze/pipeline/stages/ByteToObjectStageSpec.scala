@@ -14,7 +14,7 @@ class ByteToObjectStageSpec extends Specification {
   case class One(byte: Byte) extends Msg { def tag = 0 }
   case class Two(short: Short) extends Msg { def tag = 1 }
 
-  class MsgCodec extends ByteToObjectStage[Msg] {
+  class MsgCodec extends ByteToObjectStage[Msg, Msg] {
     val maxBufferSize: Int = -1
     def name: String = "TestCodec"
 

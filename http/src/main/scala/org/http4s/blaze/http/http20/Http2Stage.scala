@@ -18,7 +18,7 @@ import scala.util.{Failure, Success}
 
 object Http2Stage {
   /** Construct a new Http2Stage */
-  def apply(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg],
+  def apply(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg,NodeMsg.Http2Msg],
             timeout: Duration,
             ec: ExecutionContext,
             maxHeadersLength: Int = 40*1024,
@@ -34,13 +34,13 @@ object Http2Stage {
   }
 }
 
-class Http2Stage private(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg],
+class Http2Stage private(nodeBuilder: Int => LeafBuilder[NodeMsg.Http2Msg,NodeMsg.Http2Msg],
                          timeout: Duration,
                          http2Settings: Http2Settings,
                          headerDecoder: HeaderDecoder,
                          headerEncoder: HeaderEncoder,
                          ec: ExecutionContext)
-  extends TailStage[ByteBuffer] with WriteSerializer[ByteBuffer] { http2Stage =>
+  extends TailStage[ByteBuffer,ByteBuffer] with WriteSerializer[ByteBuffer,ByteBuffer] { http2Stage =>
 
   private class OpsImpl extends Http2StreamOps {
   override def streamWrite(stream: Http2Stream, data: Seq[Http2Msg]): Future[Unit] =

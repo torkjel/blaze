@@ -7,18 +7,18 @@ import scala.concurrent.Future
 import scala.collection.immutable.VectorBuilder
 import org.http4s.blaze.pipeline.Command.OutboundCommand
 
-abstract class BufferingStage[T](bufferSize: Int, val name: String = "BufferingStage")
-                                                               extends MidStage[T, T] {
+abstract class BufferingStage[I, O](bufferSize: Int, val name: String = "BufferingStage")
+    extends MidStage[I, O, I, O] {
 
-  private val buffer = new VectorBuilder[T]
+  private val buffer = new VectorBuilder[O]
   private var size = 0
 
-  protected def measure(buffer: T): Int
+  protected def measure(buffer: O): Int
 
   // Just forward read requests
-  def readRequest(size: Int): Future[T] = channelRead(size)
+  def readRequest(size: Int): Future[I] = channelRead(size)
 
-  def writeRequest(data: T): Future[Unit] = {
+  def writeRequest(data: O): Future[Unit] = {
 
     val dsize = measure(data)
     buffer += data

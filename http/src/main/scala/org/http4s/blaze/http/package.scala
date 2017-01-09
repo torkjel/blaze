@@ -45,5 +45,5 @@ package object http {
     *
     * @param pipeline [[LeafBuilder]] which completes a websocket pipeline.
     */
-  case class WSResponseBuilder(pipeline: LeafBuilder[WebSocketFrame]) extends ResponseBuilder
+  case class WSResponseBuilder(pipeline: LeafBuilder[WebSocketFrame, WebSocketFrame]) extends ResponseBuilder
 }

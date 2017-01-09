@@ -8,7 +8,7 @@ import scala.concurrent.{Promise, Future}
 import org.http4s.blaze.util.TimingTools
 import scala.collection.mutable
 
-abstract class DelayHead[I](delay: Duration) extends HeadStage[I] {
+abstract class DelayHead[I, O](delay: Duration) extends HeadStage[I, O] {
 
   def next(): I
 
@@ -40,7 +40,7 @@ abstract class DelayHead[I](delay: Duration) extends HeadStage[I] {
 
 
 
-  override def writeRequest(data: I): Future[Unit] = {
+  override def writeRequest(data: O): Future[Unit] = {
     val p = Promise[Unit]
     TimingTools.highres.schedule(new Runnable {
       def run() {

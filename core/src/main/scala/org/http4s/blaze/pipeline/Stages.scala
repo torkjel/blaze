@@ -67,8 +67,8 @@ sealed trait Stage {
   }
 }
 
-sealed trait Tail[I] extends Stage {
-  private[pipeline] var _prevStage: Head[I] = null
+sealed trait Tail[I, O] extends Stage {
+  private[pipeline] var _prevStage: Head[I, O] = null
 
   def channelRead(size: Int = -1, timeout: Duration = Duration.Inf): Future[I] = {
     try {
@@ -79,31 +79,31 @@ sealed trait Tail[I] extends Stage {
     }  catch { case t: Throwable => return Future.failed(t) }
   }
 
-  def channelWrite(data: I): Future[Unit] = {
+  def channelWrite(data: O): Future[Unit] = {
     if (_prevStage != null) {
       try _prevStage.writeRequest(data)
       catch { case t: Throwable => Future.failed(t) }
     } else _stageDisconnected()
   }
 
-  final def channelWrite(data: I, timeout: Duration): Future[Unit] = {
+  final def channelWrite(data: O, timeout: Duration): Future[Unit] = {
     val f = channelWrite(data)
     checkTimeout(timeout, f)
   }
 
-  def channelWrite(data: Seq[I]): Future[Unit] = {
+  def channelWrite(data: Seq[O]): Future[Unit] = {
     if (_prevStage != null) {
       try _prevStage.writeRequest(data)
       catch { case t: Throwable => Future.failed(t) }
     } else _stageDisconnected()
   }
 
-  final def channelWrite(data: Seq[I], timeout: Duration): Future[Unit] = {
+  final def channelWrite(data: Seq[O], timeout: Duration): Future[Unit] = {
     val f = channelWrite(data)
     checkTimeout(timeout, f)
   }
 
-  final def spliceBefore(stage: MidStage[I, I]): Unit = {
+  final def spliceBefore(stage: MidStage[I, O, I, O]): Unit = {
     if (_prevStage != null) {
       stage._prevStage = _prevStage
       stage._nextStage = this
@@ -132,7 +132,7 @@ sealed trait Tail[I] extends Stage {
     if (this.name == name) Some(this)
     else if (_prevStage == null) None
     else _prevStage match {
-      case s: Tail[_] => s.findOutboundStage(name)
+      case s: Tail[_, _] => s.findOutboundStage(name)
       case t          => if (t.name == name) Some(t) else None
 
     }
@@ -142,20 +142,20 @@ sealed trait Tail[I] extends Stage {
     if (clazz.isAssignableFrom(this.getClass)) Some(this.asInstanceOf[C])
     else if (_prevStage == null) None
     else _prevStage match {
-      case s: Tail[_] => s.findOutboundStage[C](clazz)
+      case s: Tail[_, _] => s.findOutboundStage[C](clazz)
       case t =>
         if (clazz.isAssignableFrom(t.getClass)) Some(t.asInstanceOf[C])
         else None
     }
   }
 
-  final def replaceInline(leafBuilder: LeafBuilder[I], startup: Boolean = true): this.type = {
+  final def replaceInline(leafBuilder: LeafBuilder[I, O], startup: Boolean = true): this.type = {
     stageShutdown()
 
     if (this._prevStage == null) return this
 
     this match {
-      case m: MidStage[_, _] =>
+      case m: MidStage[_, _, _, _] =>
         m.sendInboundCommand(Disconnected)
         m._nextStage = null
 
@@ -167,8 +167,8 @@ sealed trait Tail[I] extends Stage {
     this._prevStage = null
 
     prev match {
-      case m: MidStage[_, I] => leafBuilder.prepend(m)
-      case h: HeadStage[I]   => leafBuilder.base(h)
+      case m: MidStage[_, I, _, _] => leafBuilder.prepend(m)
+      case h: HeadStage[I, _]   => leafBuilder.base(h)
     }
 
     if (startup) prev.sendInboundCommand(Command.Connected)
@@ -214,10 +214,10 @@ sealed trait Tail[I] extends Stage {
     Future.failed(new Exception(s"This stage '$name' isn't connected!"))
 }
 
-sealed trait Head[O] extends Stage {
-  private[pipeline] var _nextStage: Tail[O] = null
+sealed trait Head[I, O] extends Stage {
+  private[pipeline] var _nextStage: Tail[I, O] = null
 
-  def readRequest(size: Int): Future[O]
+  def readRequest(size: Int): Future[I]
 
   def writeRequest(data: O): Future[Unit]
 
@@ -260,7 +260,7 @@ sealed trait Head[O] extends Stage {
     case cmd        => logger.warn(s"$name received unhandled outbound command: $cmd")
   }
 
-  final def spliceAfter(stage: MidStage[O, O]): Unit = {
+  final def spliceAfter(stage: MidStage[I, O, I, O]): Unit = {
     if (_nextStage != null) {
       stage._nextStage = _nextStage
       stage._prevStage = this
@@ -277,8 +277,8 @@ sealed trait Head[O] extends Stage {
     if (this.name == name) Some(this)
     else if (_nextStage == null) None
     else _nextStage match {
-      case s: MidStage[_, _] => s.findInboundStage(name)
-      case t: TailStage[_]   => if (t.name == name) Some(t) else None
+      case s: MidStage[_, _, _, _] => s.findInboundStage(name)
+      case t: TailStage[_, _]   => if (t.name == name) Some(t) else None
     }
   }
 
@@ -286,8 +286,8 @@ sealed trait Head[O] extends Stage {
     if (clazz.isAssignableFrom(this.getClass)) Some(this.asInstanceOf[C])
     else if (_nextStage == null) None
     else _nextStage match {
-      case s: MidStage[_, _] => s.findInboundStage[C](clazz)
-      case t: TailStage[_] =>
+      case s: MidStage[_, _, _, _] => s.findInboundStage[C](clazz)
+      case t: TailStage[_, _] =>
         if (clazz.isAssignableFrom(t.getClass)) Some(t.asInstanceOf[C])
         else None
     }
@@ -295,11 +295,11 @@ sealed trait Head[O] extends Stage {
 }
 
 /** The three fundamental stage types */
-trait TailStage[I] extends Tail[I]
+trait TailStage[I, O] extends Tail[I, O]
 
-trait HeadStage[O] extends Head[O]
+trait HeadStage[I, O] extends Head[I, O]
 
-trait MidStage[I, O] extends Tail[I] with Head[O] {
+trait MidStage[I1, O1, I2, O2] extends Tail[I1, O1] with Head[I2, O2] {
 
   // Overrides to propagate commands.
   override def outboundCommand(cmd: OutboundCommand): Unit = {
@@ -307,7 +307,7 @@ trait MidStage[I, O] extends Tail[I] with Head[O] {
     sendOutboundCommand(cmd)
   }
 
-  final def replaceInline(stage: MidStage[I, O]): this.type = {
+  final def replaceInline(stage: MidStage[I1, O1, I2, O2]): this.type = {
     stageShutdown()
 
     if (_nextStage == null || _prevStage == null) return this
@@ -320,13 +320,13 @@ trait MidStage[I, O] extends Tail[I] with Head[O] {
     this
   }
 
-  final def replaceNext(stage: LeafBuilder[O]): Tail[O] = _nextStage.replaceInline(stage)
+  final def replaceNext(stage: LeafBuilder[I2, O2]): Tail[I2, O2] = _nextStage.replaceInline(stage)
 
-  final def removeStage(implicit ev: MidStage[I,O] =:= MidStage[I, I]): Unit = {
+  final def removeStage(implicit ev: MidStage[I1,O1,I2,O2] =:= MidStage[I1, O1, I1, O1]): Unit = {
     stageShutdown()
 
     if (_prevStage != null && _nextStage != null) {
-      val me: MidStage[I, I] = ev(this)
+      val me: MidStage[I1, O1, I1, O1] = ev(this)
       _prevStage._nextStage = me._nextStage
       me._nextStage._prevStage = me._prevStage
 

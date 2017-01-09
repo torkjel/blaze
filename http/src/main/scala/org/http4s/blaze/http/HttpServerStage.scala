@@ -22,7 +22,7 @@ import org.http4s.blaze.util.{BufferTools, Execution}
 import scala.annotation.tailrec
 
 class HttpServerStage(maxReqBody: Long, maxNonBody: Int, ec: ExecutionContext)(handleRequest: HttpService)
-  extends Http1ServerParser(maxNonBody, maxNonBody, 5*1024) with TailStage[ByteBuffer] { httpServerStage =>
+  extends Http1ServerParser(maxNonBody, maxNonBody, 5*1024) with TailStage[ByteBuffer, ByteBuffer] { httpServerStage =>
   import HttpServerStage._
 
   private implicit def implicitEC = trampoline
@@ -144,7 +144,7 @@ class HttpServerStage(maxReqBody: Long, maxNonBody: Int, ec: ExecutionContext)(h
   }
 
   /** Deal with route response of WebSocket form */
-  private def handleWebSocket(reqHeaders: Headers, wsBuilder: LeafBuilder[WebSocketFrame]): Future[RouteResult] = {
+  private def handleWebSocket(reqHeaders: Headers, wsBuilder: LeafBuilder[WebSocketFrame, WebSocketFrame]): Future[RouteResult] = {
     val sb = new StringBuilder(512)
     WebsocketHandshake.serverHandshake(reqHeaders) match {
       case Left((i, msg)) =>

@@ -10,7 +10,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.Promise
 
 
-class MapTail[A](f: A => A) extends TailStage[A] {
+class MapTail[A](f: A => A) extends TailStage[A, A] {
   override def name = "MapTail"
 
   def startLoop(): Future[Unit] = {

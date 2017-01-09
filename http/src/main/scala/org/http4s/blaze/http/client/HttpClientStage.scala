@@ -15,7 +15,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class HttpClientStage(timeout: Duration)
-    extends Http1ClientParser with TailStage[ByteBuffer] {
+    extends Http1ClientParser with TailStage[ByteBuffer, ByteBuffer] {
 
   def name: String = "ClientStage"
 

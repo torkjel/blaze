@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 
-trait ByteToObjectStage[O] extends MidStage[ByteBuffer, O] {
+trait ByteToObjectStage[I, O] extends MidStage[ByteBuffer, ByteBuffer, I, O] {
   import org.http4s.blaze.util.BufferTools._
 
   private var _decodeBuffer: ByteBuffer = null
@@ -33,7 +33,7 @@ trait ByteToObjectStage[O] extends MidStage[ByteBuffer, O] {
     * @param in ByteBuffer of immediately available data
     * @return optional message if enough data was available
     */
-  def bufferToMessage(in: ByteBuffer): Option[O]
+  def bufferToMessage(in: ByteBuffer): Option[I]
 
   val maxBufferSize: Int
 
@@ -55,7 +55,7 @@ trait ByteToObjectStage[O] extends MidStage[ByteBuffer, O] {
     }
   }
 
-  def readRequest(size: Int): Future[O] = {
+  def readRequest(size: Int): Future[I] = {
     if (_decodeBuffer != null && _decodeBuffer.hasRemaining) {
       try {
         val slice = _decodeBuffer.slice()
@@ -71,14 +71,14 @@ trait ByteToObjectStage[O] extends MidStage[ByteBuffer, O] {
     } else startReadDecode()
   }
 
-  private def startReadDecode(): Future[O] = {
-    val p = Promise[O]
+  private def startReadDecode(): Future[I] = {
+    val p = Promise[I]
     readAndDecodeLoop(p)
     p.future
   }
 
   // if we got here, we need more data
-  private def readAndDecodeLoop(p: Promise[O]): Unit = channelRead().onComplete {
+  private def readAndDecodeLoop(p: Promise[I]): Unit = channelRead().onComplete {
     case Success(lineBuffer) =>
       _decodeBuffer = concatBuffers(_decodeBuffer, lineBuffer)
 

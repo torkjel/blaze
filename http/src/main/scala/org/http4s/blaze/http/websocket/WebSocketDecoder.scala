@@ -9,7 +9,7 @@ import org.http4s.websocket.FrameTranscoder.TranscodeError
 
 
 class WebSocketDecoder(isClient: Boolean, val maxBufferSize: Int = 0)
-      extends FrameTranscoder(isClient) with ByteToObjectStage[WebSocketFrame] {
+      extends FrameTranscoder(isClient) with ByteToObjectStage[WebSocketFrame, WebSocketFrame] {
 
   val name = "Websocket Decoder"
 

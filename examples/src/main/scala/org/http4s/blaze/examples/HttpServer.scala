@@ -17,7 +17,7 @@ class HttpServer(factory: ServerChannelGroup, port: Int, ports: Int*) {
 
   private val status = new IntervalConnectionMonitor(2.seconds)
 
-  def trans(builder: LeafBuilder[ByteBuffer]): LeafBuilder[ByteBuffer] = builder
+  def trans(builder: LeafBuilder[ByteBuffer, ByteBuffer]): LeafBuilder[ByteBuffer, ByteBuffer] = builder
 
   def run(): Seq[ServerChannel] = {
     (port +: ports).map { i =>
@@ -25,7 +25,7 @@ class HttpServer(factory: ServerChannelGroup, port: Int, ports: Int*) {
       val f: BufferPipelineBuilder =
       status.wrapBuilder { _ => trans(
         LeafBuilder(ExampleService.http1Stage(Some(status), 10*1024, Some(ref)))
-                .prepend(new QuietTimeoutStage[ByteBuffer](30.seconds))
+                .prepend(new QuietTimeoutStage[ByteBuffer, ByteBuffer](30.seconds))
       )
       }
 
@@ -64,7 +64,7 @@ object SSLHttpServer {
     val sslContext = ExampleKeystore.sslContext()
     val f = NIO1SocketServerGroup.fixedGroup(workerThreads = Consts.poolSize)
     new HttpServer(f, 4430) {
-      override def trans(builder: LeafBuilder[ByteBuffer]): LeafBuilder[ByteBuffer] = {
+      override def trans(builder: LeafBuilder[ByteBuffer, ByteBuffer]): LeafBuilder[ByteBuffer, ByteBuffer] = {
         val eng = sslContext.createSSLEngine()
         eng.setUseClientMode(false)
         builder.prepend(new SSLStage(eng, 100*1024))
@@ -83,7 +83,7 @@ object ClientAuthSSLHttpServer {
     val sslContext = ExampleKeystore.clientAuthSslContext()
     val f = NIO1SocketServerGroup.fixedGroup(workerThreads = Consts.poolSize)
     new HttpServer(f, 4430) {
-      override def trans(builder: LeafBuilder[ByteBuffer]): LeafBuilder[ByteBuffer] = {
+      override def trans(builder: LeafBuilder[ByteBuffer, ByteBuffer]): LeafBuilder[ByteBuffer, ByteBuffer] = {
         val eng = sslContext.createSSLEngine()
         eng.setUseClientMode(false)
         eng.setNeedClientAuth(true)
