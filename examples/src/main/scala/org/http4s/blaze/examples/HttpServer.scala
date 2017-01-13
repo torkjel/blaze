@@ -24,7 +24,7 @@ class HttpServer(factory: ServerChannelGroup, port: Int, ports: Int*) {
       val ref = new AtomicReference[ServerChannel](null)
       val f: BufferPipelineBuilder =
       status.wrapBuilder { _ => trans(
-        LeafBuilder(ExampleService.http1Stage(Some(status), 10*1024, Some(ref)))
+        ExampleService.http1Stage(Some(status), 10*1024, Some(ref))
                 .prepend(new QuietTimeoutStage[ByteBuffer, ByteBuffer](30.seconds))
       )
       }

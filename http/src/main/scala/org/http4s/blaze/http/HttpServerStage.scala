@@ -21,8 +21,9 @@ import org.http4s.blaze.util.{BufferTools, Execution}
 
 import scala.annotation.tailrec
 
-class HttpServerStage(maxReqBody: Long, maxNonBody: Int, ec: ExecutionContext)(handleRequest: HttpService)
-  extends Http1ServerParser(maxNonBody, maxNonBody, 5*1024) with TailStage[ByteBuffer, ByteBuffer] { httpServerStage =>
+class HttpServerStage(maxReqBody: Long, maxNonBody: Int, ec: ExecutionContext)
+    extends Http1ServerParser(maxNonBody, maxNonBody, 5*1024)
+    with MidStage[ByteBuffer, ByteBuffer, HttpRequest, ResponseBuilder] { httpServerStage =>
   import HttpServerStage._
 
   private implicit def implicitEC = trampoline
@@ -41,68 +42,52 @@ class HttpServerStage(maxReqBody: Long, maxNonBody: Int, ec: ExecutionContext)(h
   // Will act as our loop
   override def stageStartup() {
     logger.info("Starting HttpStage")
+  }
+
+  def readRequest(size: Int): Future[HttpRequest] =
     requestLoop()
-  }
 
-  private def requestLoop(): Unit = {
-    channelRead().onComplete {
-      case Success(buff)    => readLoop(buff)
-      case Failure(Cmd.EOF) => // NOOP
-      case Failure(t)       => shutdownWithCommand(Cmd.Error(t))
+  def writeRequest(responseBuilder: ResponseBuilder): Future[Unit] =
+    responseBuilder match {
+      case HttpResponse(handler) =>
+        Future.successful(handler.handle(getEncoder(true, _)).onComplete(completionHandler))
+    }
+
+  private def requestLoop(): Future[HttpRequest] = {
+    channelRead().flatMap(readLoop).recoverWith {
+      case Cmd.EOF =>
+        Future.failed(Cmd.EOF)
+      case t       =>
+        shutdownWithCommand(Cmd.Error(t))
+        Future.failed(t)
     }
   }
 
-  private def readLoop(buff: ByteBuffer): Unit = {
-    try {
-      if (!requestLineComplete() && !parseRequestLine(buff)) {
-        requestLoop()
-        return
-      }
-
-      if (!headersComplete() && !parseHeaders(buff)) {
-        requestLoop()
-        return
-      }
-
-      // TODO: need to check if we need a Host header or otherwise validate the request
-      // we have enough to start the request
-      val hs = headers
-      headers = new ArrayBuffer[(String, String)](hs.size + 10)
-      remainder = buff
-
-      val req = HttpRequest(method, uri, hs, getMessageBody())
-      runRequest(req)
+  private def readLoop(buff: ByteBuffer): Future[HttpRequest] = {
+    if (!requestLineComplete() && !parseRequestLine(buff)) {
+      requestLoop()
     }
-    catch { case t: Throwable => shutdownWithCommand(Cmd.Error(t)) }
+
+    if (!headersComplete() && !parseHeaders(buff)) {
+      requestLoop()
+    }
+
+    // TODO: need to check if we need a Host header or otherwise validate the request
+    // we have enough to start the request
+    val hs = headers
+    headers = new ArrayBuffer[(String, String)](hs.size + 10)
+    remainder = buff
+
+    Future.successful(HttpRequest(method, uri, HttpVersion(major, minor), hs, getMessageBody()))
   }
 
-  private def resetStage() {
+  private def resetStage(): Unit = {
     reset()
     uri = null
     method = null
     minor = -1
     major = -1
     headers.clear()
-  }
-
-  private def runRequest(request: HttpRequest): Unit = {
-    try handleRequest(request).onComplete {
-      case Success(HttpResponse(handler)) =>
-
-        val forceClose = request.headers.exists { case (k, v) =>
-          k.equalsIgnoreCase("connection") && v == "close"
-        }
-
-        try handler.handle(getEncoder(forceClose, _)).onComplete(completionHandler)
-        catch { case e: Throwable =>
-          logger.error(e)("Failure during response encoding. Response not committed.")
-          completionHandler(Failure(e))
-        }
-
-      case Success(WSResponseBuilder(stage)) => handleWebSocket(request.headers, stage)
-      case Failure(e) => send500(e)
-    }(ec)
-    catch { case e: Throwable => send500(e) }
   }
 
   private def send500(error: Throwable): Unit = {
@@ -255,7 +240,7 @@ class HttpServerStage(maxReqBody: Long, maxNonBody: Int, ec: ExecutionContext)(h
 }
 
 private[http] object HttpServerStage {
-  sealed trait RouteResult
+  sealed trait RouteResult extends Cmd.OutboundCommand
   case object Reload  extends RouteResult
   case object Close   extends RouteResult
   case object Upgrade extends RouteResult

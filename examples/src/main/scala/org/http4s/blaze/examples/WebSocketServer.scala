@@ -17,7 +17,10 @@ import org.log4s.getLogger
 import scala.concurrent.Future
 
 class WebSocketServer(port: Int) {
-  private val f: BufferPipelineBuilder = _ => LeafBuilder(new ExampleWebSocketHttpServerStage)
+  /** this stage can be seen as the "route" of the example. It handles requests and returns responses */
+  private val f: BufferPipelineBuilder = _ => LeafBuilder(
+    new HttpServiceStage(Execution.trampoline)(ExampleWebSocketHttpServerStage.handleRequest)
+  ).prepend(new HttpServerStage(1024*1024, 10*1024, Execution.trampoline))
 
   val group = AsynchronousChannelGroup.withFixedThreadPool(Consts.poolSize, Executors.defaultThreadFactory())
 
@@ -29,10 +32,6 @@ class WebSocketServer(port: Int) {
 object WebSocketServer {
   def main(args: Array[String]): Unit = new WebSocketServer(8080).run().join()
 }
-
-/** this stage can be seen as the "route" of the example. It handles requests and returns responses */
-class ExampleWebSocketHttpServerStage
-  extends HttpServerStage(1024*1024, 10*1024, Execution.trampoline)(ExampleWebSocketHttpServerStage.handleRequest)
 
 /** This represents the actual web socket interactions */
 class SocketStage extends WSStage {

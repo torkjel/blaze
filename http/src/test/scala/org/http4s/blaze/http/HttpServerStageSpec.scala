@@ -49,14 +49,15 @@ class HttpServerStageSpec extends Specification {
     acc.result()
   }
 
-  private def newStage(): HttpServerStage = {
-    new HttpServerStage(Long.MaxValue, Int.MaxValue, ec)(service)
+  private def newStage(): LeafBuilder[ByteBuffer, ByteBuffer] = {
+    val serverStage = new HttpServerStage(Long.MaxValue, Int.MaxValue, ec)
+    LeafBuilder(new HttpServiceStage(ec)(service)).prepend(serverStage)
   }
 
   private def runPipeline(requests: HttpRequest*): ByteBuffer = {
     val leaf = newStage()
     val head = new GatheringSeqHead[ByteBuffer](renderRequests(requests:_*))
-    LeafBuilder(leaf).base(head)
+    leaf.base(head)
 
     BufferTools.joinBuffers(Await.result(head.go(), 10.seconds))
   }
@@ -76,7 +77,7 @@ class HttpServerStageSpec extends Specification {
 
   "HttpServerStage" should {
     "respond to a simple ping" in {
-      val request = HttpRequest("GET", "/ping", Nil, MessageBody.emptyMessageBody)
+      val request = HttpRequest("GET", "/ping", HttpVersion.`1.1`, Nil, MessageBody.emptyMessageBody)
 
       val resp = runPipeline(request)
       val (code, hs, body) = ResponseParser(resp)
@@ -86,8 +87,8 @@ class HttpServerStageSpec extends Specification {
     }
 
     "run two requests" in {
-      val request1 = HttpRequest("GET", "/ping", Nil, MessageBody.emptyMessageBody)
-      val request2 = HttpRequest("GET", "/pong", Nil, MessageBody.emptyMessageBody)
+      val request1 = HttpRequest("GET", "/ping", HttpVersion.`1.1`, Nil, MessageBody.emptyMessageBody)
+      val request2 = HttpRequest("GET", "/pong", HttpVersion.`1.1`, Nil, MessageBody.emptyMessageBody)
 
       val resp = runPipeline(request1, request2)
 
@@ -110,7 +111,7 @@ class HttpServerStageSpec extends Specification {
 
     "run a request with a body" in {
       val b = StandardCharsets.UTF_8.encode("data")
-      val req = HttpRequest("POST", "/foo", Seq("content-length" -> "4"), MessageBody(b))
+      val req = HttpRequest("POST", "/foo", HttpVersion.`1.1`, Seq("content-length" -> "4"), MessageBody(b))
 
       val resp = runPipeline(req)
 

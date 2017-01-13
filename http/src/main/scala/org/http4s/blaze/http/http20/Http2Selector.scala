@@ -23,8 +23,10 @@ object Http2Selector {
     val H2_14    = "h2-14"
     
     def builder(s: String): LeafBuilder[ByteBuffer,ByteBuffer] = s match {
-    case H2 | H2_14 => LeafBuilder(http2Stage(service, maxBody, maxNonbodyLength, ec))
-    case _          => LeafBuilder(new HttpServerStage(maxBody, maxNonbodyLength, ec)(service))
+      case H2 | H2_14 =>
+        LeafBuilder(http2Stage(service, maxBody, maxNonbodyLength, ec))
+      case _          =>
+        LeafBuilder(new HttpServiceStage(ec)(service)).prepend(new HttpServerStage(maxBody, maxNonbodyLength, ec))
     }
 
     def selector(protocols: Seq[String]): String =

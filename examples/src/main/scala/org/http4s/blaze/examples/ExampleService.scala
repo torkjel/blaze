@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import org.http4s.blaze.channel.ServerChannel
 import org.http4s.blaze.http.{ResponseBuilder, _}
+import org.http4s.blaze.pipeline.{LeafBuilder, Tail}
 import org.http4s.blaze.pipeline.stages.monitors.IntervalConnectionMonitor
 import org.http4s.blaze.util.{BufferTools, Execution}
 
@@ -17,8 +18,9 @@ object ExampleService {
 
   private implicit val ec = Execution.trampoline
 
-  def http1Stage(status: Option[IntervalConnectionMonitor], maxRequestLength: Int, channel: Option[AtomicReference[ServerChannel]] = None): HttpServerStage =
-    new HttpServerStage(1024*1024, maxRequestLength, Execution.trampoline)(service(status, channel))
+  def http1Stage(status: Option[IntervalConnectionMonitor], maxRequestLength: Int, channel: Option[AtomicReference[ServerChannel]] = None): LeafBuilder[ByteBuffer, ByteBuffer] =
+    LeafBuilder(new HttpServiceStage(ec)(service(status, channel)))
+      .prepend(new HttpServerStage(1024 * 1024, maxRequestLength, ec))
 
   def service(status: Option[IntervalConnectionMonitor], channel: Option[AtomicReference[ServerChannel]] = None)
              (request: HttpRequest): Future[ResponseBuilder] = {
