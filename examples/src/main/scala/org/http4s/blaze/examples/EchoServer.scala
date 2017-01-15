@@ -42,11 +42,11 @@ class EchoServer {
     final override def stageStartup(): Unit = {
       channelRead().onComplete{
         case Success(buff) =>
-          val b = BufferTools.allocate(buff.remaining() + msg.length)
-          b.put(msg).put(buff).flip()
+//          val b = BufferTools.allocate(buff.remaining())
+//          b.put(buff).flip()
 
           // Write it, wait for conformation, and start again
-          channelWrite(b).onSuccess{ case _ => stageStartup() }
+          channelWrite(buff).onSuccess{ case _ => stageStartup() }
 
         case Failure(EOF) => this.logger.debug("Channel closed.")
         case Failure(t)   => this.logger.error("Channel read failed: " + t)
